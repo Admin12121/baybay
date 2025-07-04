@@ -1,7 +1,5 @@
 import os
 import subprocess
-import getpass
-import requests
 from prettytable import PrettyTable
 from sys import platform as OS
 
@@ -47,7 +45,7 @@ def get_default_meta(app_name):
         ("InternalName", low),
         ("OriginalFilename", f"{low}.exe"),
     ]
-íí
+
 def prompt_metadata(meta):
     print("\n[+] Enter application metadata (leave blank to keep current value):")
     for i, (field, default) in enumerate(meta):

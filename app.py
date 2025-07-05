@@ -132,14 +132,11 @@ class TabScreen(Screen):
             fields = list(self.query("CLIField").results())
             if not fields:
                 return
-            # Remove all highlights
             for field in fields:
                 field.selected = False
-            # Highlight current
             fields[self.set_field_index].selected = True
 
             if not self.set_editing:
-                # Only allow tab switching when NOT editing
                 if key in {"b", "s", "d", "h", "q"}:
                     if key == "q":
                         self.app.exit()
@@ -162,7 +159,6 @@ class TabScreen(Screen):
                 for i, field in enumerate(fields):
                     field.selected = (i == self.set_field_index)
             else:
-                # Pass key events to the field for editing
                 fields[self.set_field_index].on_key(event)
                 if key == "left":
                     self.set_editing = False
@@ -170,6 +166,9 @@ class TabScreen(Screen):
                     # Save value
                     field_id = fields[self.set_field_index].id
                     self.set_values[field_id] = fields[self.set_field_index].value
+                    # Check if all fields are filled and remount
+                    if all(f.value.strip() for f in fields):
+                        self.mount_tab_content()
             return
 
         if key == "b":
@@ -224,19 +223,19 @@ class TabScreen(Screen):
 
     async def on_button_pressed(self, event):
         if event.button.id == "set-config-btn":
-            # Remove set tab content
             set_tab = self.query_one("#set-cli-fields")
             await set_tab.remove()
-            # Mount log widget
-            log = Log(highlight=True, id="tree-log")
-            await self.mount(log)
-            # Run 'tree' and stream output
+            container = self.query("#tab-content").first()
+            log = Static("", id="tree-log")  # Use Static for simple output
+            await container.mount(log)
             proc = subprocess.Popen(
                 ["tree"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=True
             )
+            output_lines = []
             for line in proc.stdout:
-                log.write(line.rstrip())
-                log.scroll_end(animate=False)
+                output_lines.append(line.rstrip())
+                # Join lines with \n and update the Static widget
+                log.update("\n".join(output_lines))
             proc.wait()
 
 
@@ -282,6 +281,8 @@ class CLIField(Widget):
                 self.editing = False
                 self.selected = True
                 self.refresh()
+                if hasattr(self.app.screen, "mount_tab_content"):
+                    self.app.screen.mount_tab_content()
             elif event.key == "backspace":
                 self.value = self.value[:-1]
                 self.refresh()
@@ -409,6 +410,13 @@ class BaybayApp(App):
         padding-bottom: 1;
         align: left middle;
         content-align: left middle;
+    }
+
+    #tree-log {
+        width: 100%;
+        height: auto;
+        overflow-x: hidden;
+        color: white;
     }
     """
 

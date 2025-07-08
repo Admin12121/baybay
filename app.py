@@ -6,7 +6,8 @@ from textual.widget import Widget
 from textual.reactive import reactive
 from textual.timer import Timer
 import pyperclip
-import subprocess
+import asyncio
+
 
 HELP_TABS = [
     ("help", "This is the help section. Use up/down arrows to navigate."),
@@ -57,22 +58,22 @@ class TabScreen(Screen):
             Vertical(
                 Static(self.render_tab_bar(), id="tab-bar"),
                 Container(id="tab-content"),
-                Static("─" * 80, id="footer-line"),
+                Static("─" * 100, id="footer-line"),
                 Static("r restart      h help     q quit", id="footer-hints"),
                 id="tab-area"
             )
         )
 
     def render_tab_bar(self) -> str:
-        top = "┌───────────────────┬──────────────────┬──────────────────┬──────────────────┐"
+        top = "┌───────────────────────────┬──────────────────────────┬──────────────────────────┬──────────────────────────┐"
         middle = (
             "│"
-            f" {'baybay'.center(17)} │"
-            f" {'s set-config'.center(16)} │"
-            f" {'d download'.center(16)} │"
-            f" {'h help'.center(16)} │"
+            f" {'baybay'.center(25)} │"
+            f" {'s set-config'.center(24)} │"
+            f" {'d download'.center(24)} │"
+            f" {'h help'.center(24)} │"
         )
-        bottom = "└───────────────────┴──────────────────┴──────────────────┴──────────────────┘"
+        bottom = "└───────────────────────────┴──────────────────────────┴──────────────────────────┴──────────────────────────┘"
         return f"{top}\n{middle}\n{bottom}"
 
     def render_help_widget(self) -> Center:
@@ -84,15 +85,37 @@ class TabScreen(Screen):
     def render_tab_content(self):
         if self.active_tab == "terminal":
             return Static(
-                    "██████╗  █████╗ ██╗   ██╗██████╗  █████╗ ██╗   ██╗\n"
-                    "██╔══██╗██╔══██╗╚██╗ ██╔╝██╔══██╗██╔══██╗╚██╗ ██╔╝\n"
-                    "██████╔╝███████║ ╚████╔╝ ██████╔╝███████║ ╚████╔╝ \n"
-                    "██╔══██╗██╔══██║  ╚██╔╝  ██╔══██╗██╔══██║  ╚██╔╝  \n"
-                    "██████╔╝██║  ██║   ██║   ██████╔╝██║  ██║   ██║   \n"
-                    "╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝   ╚═╝   \n\n"
-                    "              build by vicky aka admin12121\n"
-                    "              github: admin12121\n",
+                    """                                               
+                                                                         .   @@@@                     @@@@   .       
+                                                                        : @@@@@@@@@                 @@@@@@@@@ :      
+                                                                         @@@@@@@@@@@  :         :  @@@@@@@@@@@       
+                                                                         @@@@@@@@@@@@#           #@@@@@@@@@@@@       
+                                                                          @@@@@@@@@@@@           @@@@@@@@@@@@        
+                                                                        . @@@@@@@@@@@@# .     : *@@@@@@@@@@@@ .      
+                                                                            @@@@@@@@@@@         @@@@@@@@@@@          
+                                                                            @@@@@@@@@@@      :  @@@@@@@@@@@          
+                                                                             @@@@@@@@@@@       @@@@@@@@@@@           
+                                                                              @@@@@@@@@@       @@@@@@@@@@            
+                                                                               -@@@@@@   :   :   @@@@@@=             
+                                                                                @@@        .        @@@              
+                                                                                    @@@@@@@@@@@@@@@                  
+                    ██████╗  █████╗ ██╗   ██╗██████╗  █████╗ ██╗   ██╗           @@@@@@@@@@@@@@@@@@@@@               
+                    ██╔══██╗██╔══██╗╚██╗ ██╔╝██╔══██╗██╔══██╗╚██╗ ██╔╝         %@@@@@@@@@@@@@@@@@@@@@@@%             
+                    ██████╔╝███████║ ╚████╔╝ ██████╔╝███████║ ╚████╔╝         @@@@@@@@@@@@@@@@@@@@@@@@@@@            
+                    ██╔══██╗██╔══██║  ╚██╔╝  ██╔══██╗██╔══██║  ╚██╔╝         @@@@@@@@@@@@@@@@@@@@@@@@@@@@@           
+                    ██████╔╝██║  ██║   ██║   ██████╔╝██║  ██║   ██║         @@@@.     +@@@@@@@@. @@  @@@@@@          
+                    ╚═════╝ ╚═╝  ╚═╝   ╚═╝   ╚═════╝ ╚═╝  ╚═╝   ╚═╝         @@@%       @@@@@@@@@    @@@@@@@          
+                                      build by vicky aka @admin12121         @@@%        @@@@@@@@@   @@@@@@@          
+                                                                            @@@@        @@@@@@@@@  @  @@@@@          
+                                                                             @@@@      @@@@@@@@@+  @   @@@           
+                                                                              @@@@@@@@@@@@   @@@@@@@@@@@@            
+                                                                             :   @@@@@@@@@@@@@@@@@@@@@   :           
+                                                                                     @@@@@@@@@@@@@                   
+                                                                                    .. +@@@ @@@+ ..                  
+                                                                            
+                    """,
                     id="tab-content",
+                    classes="home-tab",
                     expand=False
                 )
         elif self.active_tab == "set":
@@ -163,10 +186,8 @@ class TabScreen(Screen):
                 if key == "left":
                     self.set_editing = False
                     fields[self.set_field_index].editing = False
-                    # Save value
                     field_id = fields[self.set_field_index].id
                     self.set_values[field_id] = fields[self.set_field_index].value
-                    # Check if all fields are filled and remount
                     if all(f.value.strip() for f in fields):
                         self.mount_tab_content()
             return
@@ -226,17 +247,46 @@ class TabScreen(Screen):
             set_tab = self.query_one("#set-cli-fields")
             await set_tab.remove()
             container = self.query("#tab-content").first()
-            log = Static("", id="tree-log")  # Use Static for simple output
-            await container.mount(log)
-            proc = subprocess.Popen(
-                ["tree"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, shell=True
-            )
-            output_lines = []
-            for line in proc.stdout:
-                output_lines.append(line.rstrip())
-                # Join lines with \n and update the Static widget
-                log.update("\n".join(output_lines))
-            proc.wait()
+            container.remove_children()
+
+            # Create log widget
+            log_widget = Log(highlight=True, id="tree-log")
+            await container.mount(log_widget)
+
+            # Run command and stream output
+            asyncio.create_task(run_live_log(log_widget, "tree"))
+
+
+async def run_live_log(log_widget, command, max_lines=25):
+    import locale
+    process = await asyncio.create_subprocess_shell(
+        command,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.STDOUT,
+    )
+    output_lines = []
+    encodings = [locale.getpreferredencoding(False), "utf-8", "cp1252"]
+    
+    while True:
+        line = await process.stdout.readline()
+        if not line:
+            break
+        for enc in encodings:
+            try:
+                decoded = line.decode(enc).rstrip()
+                break
+            except UnicodeDecodeError:
+                continue
+        else:
+            decoded = line.decode("utf-8", errors="replace").rstrip()
+
+        output_lines.append(decoded)
+        if len(output_lines) > max_lines:
+            output_lines = output_lines[-max_lines:]
+        log_widget.update("\n".join(output_lines))
+        await asyncio.sleep(0.05)
+
+    await process.wait()
 
 
 class CLIField(Widget):
@@ -342,8 +392,7 @@ class BaybayApp(App):
     #tab-content {
         align: center middle;
         content-align: center middle;
-        padding: 1;
-        height: 25;
+        height: 30;
     }
 
     #footer-line {
@@ -358,7 +407,7 @@ class BaybayApp(App):
     }
 
     #help-tab {
-        width: 75;
+        width: 100;
         align: center middle;
         content-align: center middle;
     }
@@ -370,7 +419,7 @@ class BaybayApp(App):
     }
 
     #help-detail {
-        width: 60;
+        width: 80;
         padding: 2;
     }
 
@@ -382,7 +431,7 @@ class BaybayApp(App):
     }
 
     #set-cli-fields{
-        width: 75;
+        width: 100;
         padding: 0 2;
         align: center middle;
         content-align: center middle;
@@ -414,7 +463,7 @@ class BaybayApp(App):
 
     #tree-log {
         width: 100%;
-        height: auto;
+        height: 100%;
         overflow-x: hidden;
         color: white;
     }

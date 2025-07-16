@@ -248,12 +248,8 @@ class TabScreen(Screen):
             await set_tab.remove()
             container = self.query("#tab-content").first()
             container.remove_children()
-
-            # Create log widget
             log_widget = Log(highlight=True, id="tree-log")
             await container.mount(log_widget)
-
-            # Run command and stream output
             asyncio.create_task(run_live_log(log_widget, "tree"))
 
 

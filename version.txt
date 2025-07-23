@@ -14,11 +14,11 @@ VSVersionInfo(
       StringTable(
         '040904B0',
         [
-          StringStruct('CompanyName', 'Baybay'),
-          StringStruct('FileDescription', 'Baybay'),
-          StringStruct('ProductName', 'Baybay'),
-          StringStruct('InternalName', 'baybay'),
-          StringStruct('OriginalFilename', 'baybay.exe'),
+          StringStruct('CompanyName', 'Sdfgsdagsadfg'),
+          StringStruct('FileDescription', 'Sdfgsdagsadfg'),
+          StringStruct('ProductName', 'Sdfgsdagsadfg'),
+          StringStruct('InternalName', 'sdfgsdagsadfg'),
+          StringStruct('OriginalFilename', 'sdfgsdagsadfg.exe'),
         ]
       )
     ]),

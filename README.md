@@ -97,6 +97,8 @@ This will automatically install all required dependencies and start the TUI buil
 
 ---
 
+
+
 ## Security & Legal Notice
 
 Baybay is intended for **authorized security research, red teaming, and educational purposes only**. Use of this framework in unauthorized environments or for malicious activities is strictly forbidden. The authors disclaim all liability for misuse.
@@ -118,3 +120,4 @@ Pull requests and suggestions are welcome! Please open an issue or submit a PR t
 **Always use Baybay responsibly and legally.**
 
 ![Project Structure Overview](image1)
+
